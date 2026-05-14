@@ -1,5 +1,6 @@
 import express from "express";
-
+import { protect } from '../middlewares/jwtProtect.middleware.js';
+import { authorizeOwner, authorizedRoles } from "../middlewares/roles.js";
 import {
     createProduct,
     getAllProducts,
@@ -7,94 +8,131 @@ import {
     updateProduct,
     deleteProduct,
 } from "../controllers/products.controller.js";
+import Product from "../models/Products.js";
 
 const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Products
+ *   description: Product management APIs
+ */
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
  * /api/products:
  *   post:
- *     summary: Create a Product
- *     tags:
- *       - Products
+ *     summary: Create a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *            schema:
- *              type: object
- *              required:
- *                - name
- *                - description
- *                - category
- *                - price
- *
- *              properties:
- *                name:
- *                  type: string
- *                  example: Nike AirForce 1
- *
- *                description:
- *                  type: string
- *                  example: This a black and white Air Force one from uk
- *
- *                category:
- *                  type: string
- *                  example: Shoes
- *
- *                price:
- *                  type: number
- *                  example: 20000
- *
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - description
+ *               - category
+ *               - price
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Nike Air Force 1
+ *               description:
+ *                 type: string
+ *                 example: This is a black and white Air Force One from UK
+ *               category:
+ *                 type: string
+ *                 example: Shoes
+ *               price:
+ *                 type: number
+ *                 example: 20000
  *     responses:
  *       201:
- *         description: Successfully created product
- *
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product created successfully
+ *                 product:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     category:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
  *       500:
- *         description: Something went wrong
- *
+ *         description: Server error
  */
-
-router.post("/", createProduct);
+router.post("/", protect, createProduct);
 
 /**
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get All Products
- *     tags:
- *        - Products
+ *     summary: Get all products
+ *     tags: [Products]
  *     responses:
- *        200:
- *          description: Fetching All Products
- *          content:
- *              application/json:
- *                 schema:
- *                   type: array
- *                   items:
- *                      type: object
- *                      properties:
- *                        _id:
- *                          type: string
- *                          example: 664c8d91f1a2b3456789abc
- *                        name:
- *                          type: string
- *                          example: Nike Air Force 1
- *
- *                        description:
- *                          type: string
- *                          example: This a black and white Air Force one from uk
- *
- *                        category:
- *                          type: string
- *                          example: Shoes
- *
- *                        price:
- *                          type: number
- *                          example: 20000
- *
- *        500:
- *          description: Something Went wrong
+ *       200:
+ *         description: Products fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: 664c8d91f1a2b3456789abc
+ *                   name:
+ *                     type: string
+ *                     example: Nike Air Force 1
+ *                   description:
+ *                     type: string
+ *                     example: This is a black and white Air Force One from UK
+ *                   category:
+ *                     type: string
+ *                     example: Shoes
+ *                   price:
+ *                     type: number
+ *                     example: 20000
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *       500:
+ *         description: Server error
  */
 router.get("/", getAllProducts);
 
@@ -103,8 +141,7 @@ router.get("/", getAllProducts);
  * /api/products/{id}:
  *   get:
  *     summary: Get a single product
- *     tags:
- *       - Products
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: id
@@ -122,10 +159,10 @@ router.get("/", getAllProducts);
  *               properties:
  *                 _id:
  *                   type: string
- *                   example: 123er4566hk2345abc
+ *                   example: 664c8d91f1a2b3456789abc
  *                 name:
  *                   type: string
- *                   example: Nike Air Force
+ *                   example: Nike Air Force 1
  *                 description:
  *                   type: string
  *                   example: This is a black and white Air Force One from UK
@@ -153,67 +190,142 @@ router.get("/:id", getProduct);
  * /api/products/{id}:
  *   put:
  *     summary: Update a product
- *     tags:
- *       - Products
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         description: Product ID
  *         schema:
- *            type: string
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *              type: object
- *              properties:
- *                 name:
- *                   type: string
- *                   example: Nike Air Force
- *                 description:
- *                   type: string
- *                   example: This is a black and white Air Force One from UK
- *                 category:
- *                   type: string
- *                   example: Shoes
- *                 price:
- *                   type: number
- *                   example: 20000
- *
- *     response:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Nike Air Force 1
+ *               description:
+ *                 type: string
+ *                 example: This is a black and white Air Force One from UK
+ *               category:
+ *                 type: string
+ *                 example: Shoes
+ *               price:
+ *                 type: number
+ *                 example: 20000
+ *     responses:
  *       200:
  *         description: Product updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product updated successfully
+ *                 product:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     category:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: Product not found
  *       500:
  *         description: Server error
  */
-router.put("/:id", updateProduct);
+router.put("/:id", protect, authorizeOwner(Product, 'author'), updateProduct);
 
 /**
  * @swagger
  * /api/products/{id}:
  *   delete:
- *      summary: Delete a product
- *      tags:
- *        - Products
- *      parameters:
- *        - in: path
- *          name: id
- *          required: true
- *          description: Product ID
- *          schema:
- *            type: string
- *      responses:
- *        200:
- *          description: User deleted successfully
- *        404:
- *          description: User not found
- *        500:
- *          description: Server error
+ *     summary: Delete a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Product ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Server error
  */
-router.delete("/:id", deleteProduct);
+router.delete("/:id", protect, authorizeOwner(Product, 'author'), deleteProduct);
+
+/**
+ * @swagger
+ * /api/products/admin/all:
+ *   get:
+ *     summary: Get all products for admin
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Products fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   category:
+ *                     type: string
+ *                   price:
+ *                     type: number
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admins only
+ *       500:
+ *         description: Server error
+ */
+router.get('/admin/all', protect, authorizedRoles('admin'), getAllProducts);
 
 export default router;
