@@ -18,19 +18,37 @@ app.use(express.urlencoded({ extended: true }));
 const options = {
     definition: {
         openapi: '3.0.0',
+
         info: {
             title: 'My Backend API',
             version: '1.0.0',
-            description: ' Express API with Swagger documentation',
+            description: 'Express API with Swagger documentation',
         },
+
         servers: [
             {
                 url: `http://localhost:${port}`,
             },
         ],
+
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
+
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
     },
 
-    apis: ['./routes/*.js', './app.js'],
+    apis: ['./routes/*.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

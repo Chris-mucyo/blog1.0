@@ -41,6 +41,7 @@ export const Register = async (req, res) => {
             user: {
                 id: user._id,
                 email: user.email,
+                role: user.role
             },
         });
     } catch (error) {
@@ -90,6 +91,7 @@ export const Login = async (req, res) => {
             user: {
                 id: user._id,
                 email: user.email,
+                role: user.role,
             }
         })
     } catch (error) {

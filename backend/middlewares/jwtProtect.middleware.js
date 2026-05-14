@@ -1,20 +1,32 @@
 import jwt from 'jsonwebtoken';
-const User = require('../models/user');
+import User from '../models/User.js';
 
-const protect = async (req, res, next) => {
-    let token;
-    if (req.headers.authorization?.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = await User.findById(decoded.id).select('-password');
-            next();
-        } catch (err) {
-            console.error(err);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+export const protect = async (req, res, next ) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if(!authHeader || !authHeader.startsWith('Baerer') ) {
+            return res.status(401).json({
+                message: 'Not authorized, please log in',
+            });
         }
-    }
-    if (!token) res.status(401).json({ message: 'Not authorized, no token' });
-};
 
-export default protect;
+        const token = authHeader.split('')[1];
+
+        const decode = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = await User.findById(decode.id).select('-password');
+
+        if (!req.user) {
+            return res.status(401).json({
+                message: 'User no longer exist',
+            })
+        }
+
+        next();
+    } catch (error) {
+        return res.status(401).json({
+            message: 'Invalid or expired Token',
+        })
+    }
+}

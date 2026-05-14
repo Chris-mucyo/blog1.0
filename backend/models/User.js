@@ -15,12 +15,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+        role: {
+            type: String,
+            required: true,
+            enum: ['admin', 'user', 'moderator'],
+            default: 'user',
+        },
         products: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Product",
             }
-        ]
+        ],
+
 },
     {
         timestamps: true
