@@ -4,6 +4,8 @@ import swaggerJsdoc  from 'swagger-jsdoc';
 import connectDB from './config/db.config.js';
 import swaggerUi from 'swagger-ui-express';
 import routes from './Routes/index.routes.js';
+import cors from 'cors'
+import {methods} from "express/lib/utils.js";
 dotenv.config();
 
 connectDB()
@@ -14,6 +16,13 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors(
+    {
+        origin: 'http://localhost:5173',
+        credentials: true,
+        methods: ['POST', 'GET', 'PUT', 'DELETE'],
+    }
+))
 
 const options = {
     definition: {
